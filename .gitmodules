@@ -1,0 +1,3 @@
+[submodule "cryptoTools"]
+	path = cryptoTools
+	url = git@github.com:ladnir/cryptoTools.git
