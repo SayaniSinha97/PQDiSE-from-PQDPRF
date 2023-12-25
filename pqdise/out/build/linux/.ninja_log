@@ -1,0 +1,23 @@
+# ninja log v5
+0	13224	1703516584394253070	dEnc/CMakeFiles/dEnc.dir/dprf/LWRSymDprf.cpp.o	65705f097b411dc3
+107	11853	1703516583022203944	dEnc_tests/CMakeFiles/dEnc_tests.dir/Npr03DPRF_tests.cpp.o	98217853468c5241
+1	11335	1703516582494184727	dEnc_tests/CMakeFiles/dEnc_tests.dir/AmmrClient_tests.cpp.o	aafb4c4c352d77ac
+0	12059	1703516583226211276	dEnc/CMakeFiles/dEnc.dir/distEnc/AmmrClient.cpp.o	5de181e7536bd9ca
+2	9365	1703516580534112431	dEnc_tests/CMakeFiles/dEnc_tests.dir/Compare_DPrfs.cpp.o	e89758079a8e5ef5
+45	10625	1703516581746157368	dEnc_tests/CMakeFiles/dEnc_tests.dir/LWRDPRF_tests.cpp.o	a36d8a59453fedd0
+13660	13681	1703516584850269245	dEnc/libdEnc.a	9eb8a4f51022e3f5
+16	107	1703516571277745490	dEnc_tests/CMakeFiles/dEnc_tests.dir/Compare_DPrfs_backup.cpp.o	e4c385776f87bee4
+518	697	1703517232912544466	dEncFrontend/dEncFrontend	6c798c324ad5fa0d
+2840	14033	1703516585202281637	dEncFrontend/CMakeFiles/dEncFrontend.dir/main.cpp.o	62ae816bb24a99b4
+508	518	1703517232736541048	dEnc_tests/libdEnc_tests.a	eaa5d1572473f01c
+1	16	1703516571185741638	dEnc/CMakeFiles/dEnc.dir/dprf/LWR_helper_backup.cpp.o	3bdf35878dafbefc
+1	1205	1703516572373791190	dEnc_tests/CMakeFiles/dEnc_tests.dir/Common.cpp.o	5f851ab3ce4fe30b
+1	13660	1703516584826268393	dEnc/CMakeFiles/dEnc.dir/dprf/Npr03SymDprf.cpp.o	a3e33061ec2d96ed
+0	44	1703516571213742810	dEnc/CMakeFiles/dEnc.dir/dprf/LWRSymDprf_backup.cpp.o	43b009a381c77d03
+3	508	1703517232728540893	dEnc_tests/CMakeFiles/dEnc_tests.dir/all.cpp.o	9dec00fba4b9dc50
+1	12902	1703516584070241578	dEnc/CMakeFiles/dEnc.dir/dprf/Npr03AsymDprf.cpp.o	2cb6f341756f355b
+8252	14698	1703516585866304880	dEncFrontend/CMakeFiles/dEncFrontend.dir/util.cpp.o	5011f8adbef4f6da
+0	8248	1703516579414070290	dEnc/CMakeFiles/dEnc.dir/dprf/LWR_helper.cpp.o	bbdbf0bc80b20910
+3	3426	1703517351566083893	dEnc_tests/CMakeFiles/dEnc_tests.dir/LWRDPRF_tests.cpp.o	a36d8a59453fedd0
+3426	3435	1703517351578083983	dEnc_tests/libdEnc_tests.a	eaa5d1572473f01c
+3435	3605	1703517351746085243	dEncFrontend/dEncFrontend	6c798c324ad5fa0d
