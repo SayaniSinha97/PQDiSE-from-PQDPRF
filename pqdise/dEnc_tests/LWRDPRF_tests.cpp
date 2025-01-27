@@ -49,7 +49,7 @@ void LWRSymDPRF_eval_test(){
 	}
 	
 	/* Direct evaluation of PRF on random block inputs of x with the LWR Key */
-	direct_eval(x, &exp, LWRSymDprf::LWRKey, LWRSymDprf::q, LWRSymDprf::p);
+	direct_eval(x, &exp, LWRSymDprf::LWRKey, LWRSymDprf::logq, LWRSymDprf::logp);
 	
 	// std::cout << "input block: " << x[0] << "\n";
 

@@ -14,24 +14,30 @@ namespace dEnc{
 	u64 ncr(u64 n, u64 r);
 
 	/* This function calculates x modulo q */
-	inline u64 moduloL(u64 x, u64 q){
+	inline u64 moduloL(u64 x, int logq){
+		u64 x_ = x;
+		u64 y;
 		if(x >= 0){
-			return x%q;
+			y = x >> logq;
+			return (x_ - (y << logq));
 		}
 		else{
-			x = (-x)%q;
-			return (x ? (q-x) : x);
+			y = (-x) >> logq;
+			y = (-x_) - (y << logq);
+			return (y ? ((1 << logq) - y) : y);
 		}
 	};
 
 	/* This function rounds an integer in modulo q to an integer in modulo p. Basically for x in Z_q the function maps
 	it to the nearest integer of (x*p/q) */
-	inline u64 round_toL(u64 x, u64 q, u64 p){
-		x >>= (int)(log2(q) - log2(p) - 1);
+	inline u64 round_toL(u64 x, int logq, int logp){
+		x >>= (logq - logp - 1);
 		int flag = (x & 1) ? 1 : 0;
 		x >>= 1;
 		return (x + flag);
 	};
+
+	u64 round_off(NTL::ZZ_p x, int logq, int logp);
 
 	/* This function calculates multiplication (a * b) modulo q */
 	u64 moduloMultiplication(u64 a, u64 b, u64 q);
@@ -49,10 +55,10 @@ namespace dEnc{
 	void convert_block_to_extended_lwr_input(block x, std::vector<NTL::vec_ZZ_p>* y);
 
 	/* the partial evaluation function of LWR-based DPRF */
-	void part_eval(std::vector<std::vector<NTL::vec_ZZ_p>> inp, std::vector<std::vector<u32>> *outp, NTL::vec_ZZ_p keyshare, u64 q, u64 q1);
-	void part_eval_single(std::vector<NTL::vec_ZZ_p> inp, std::vector<u32> *outp, NTL::vec_ZZ_p keyshare, u64 q, u64 q1);
+	void part_eval(std::vector<std::vector<NTL::vec_ZZ_p>> inp, std::vector<std::vector<u64>> *outp, NTL::vec_ZZ_p keyshare, int logq, int logq1);
+	void part_eval_single(std::vector<NTL::vec_ZZ_p> inp, std::vector<u64> *outp, NTL::vec_ZZ_p keyshare, int logq, int logq1);
 
 	/* the direct evaluation function of LWR-based PRF */
-	void direct_eval(std::vector<block> in, std::vector<block>* dir_out, NTL::vec_ZZ_p key, u64 q, u64 p);
-	void direct_eval_single(std::vector<NTL::vec_ZZ_p> inp, block *outp, NTL::vec_ZZ_p key, u64 q, u64 p);
+	void direct_eval(std::vector<block> in, std::vector<block>* dir_out, NTL::vec_ZZ_p key, int logq, int logp);
+	void direct_eval_single(std::vector<NTL::vec_ZZ_p> inp, block *outp, NTL::vec_ZZ_p key, int logq, int logp);
 }

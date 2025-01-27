@@ -32,11 +32,11 @@ namespace dEnc{
         static u64 t;
 
         // Two moduli of LWR
-        static const u64 q = 4294967296, p = 1024;
+        static const int logq = 64, logp = 10;
         // static const u64 q = 4294967296, p = 256;
         // Modulus for partial evaluation
         // static const u64 q1 = 33554432;
-        static const u64 q1 = 268435456;
+        static const int logq1 = 42;
 
         // length of LWRKey vector
         static const u64 dim = 512;

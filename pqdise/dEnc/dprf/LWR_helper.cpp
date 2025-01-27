@@ -8,9 +8,8 @@
 
 namespace dEnc{
 	using RandomOracle = oc::RandomOracle;
-	// RandomOracle H_tmp(64);
 	typedef struct bytes64{
-		u32 arr[16];
+		u64 arr[8];
 	}bytes64;
 
 	std::map<std::pair<u64, u64>, u64> ncr_cache;
@@ -35,6 +34,20 @@ namespace dEnc{
 	    return ncr_cache[{n, r}];
 	}
 
+	u64 round_off(NTL::ZZ_p x, int logq, int logp){
+		NTL::ZZ x_ = NTL::conv<NTL::ZZ>(x);
+		x_ /= pow(2, logq-logp-1);
+		if(x_ % 2 == 0){
+			x_ /= 2;
+			return NTL::conv<ulong>(x_);
+		}
+		else{
+			x_ /= 2;
+			x_ += 1;
+			x_ %= NTL::conv<NTL::ZZ>(pow(2,logp));
+			return NTL::conv<ulong>(x_);
+		}
+	}
 
 	u64 moduloMultiplication(u64 a, u64 b, u64 q){
 	    u64 res = 0;
@@ -93,8 +106,8 @@ namespace dEnc{
 	void convert_block_to_extended_lwr_input(block x, std::vector<NTL::vec_ZZ_p>* y){
 		using namespace NTL;
 		std::vector<bytes64> hash_outputs;
-		hash_outputs.resize(13 * 32);
-		int section_length = 32;
+		hash_outputs.resize(13 * 128);
+		int section_length = 128;
 		int sectionid, offset;
 		
 		// #pragma omp parallel for num_threads(4) private(sectionid, offset)
@@ -106,8 +119,8 @@ namespace dEnc{
 			sectionid = i/section_length;
 			offset = i % section_length;
 			Hash.Final(hash_outputs[i]);
-			for(int j = 0; j < 16; j++){
-				(*y)[sectionid][(offset * 16) + j] = conv<ZZ_p>(hash_outputs[i].arr[j]);
+			for(int j = 0; j < 8; j++){
+				(*y)[sectionid][(offset * 8) + j] = conv<ZZ_p>(hash_outputs[i].arr[j]);
 			}
 			// Hash.Reset();
 		}
@@ -123,70 +136,51 @@ namespace dEnc{
 		return b;
 	}
 
-
-	void part_eval(std::vector<std::vector<NTL::vec_ZZ_p>> inp, std::vector<std::vector<u32>> *outp, NTL::vec_ZZ_p keyshare, u64 q, u64 q1){
+	void part_eval(std::vector<std::vector<NTL::vec_ZZ_p>> inp, std::vector<std::vector<u64>> *outp, NTL::vec_ZZ_p keyshare, int logq, int logq1){
 		int sz = inp.size();
 		// std::cout << "sz: " << sz << "\n";
-		// #pragma omp parallel num_threads(4) shared(sz, keyshare, inp, outp, q, q1)
-		// {
-			// #pragma omp taskloop num_tasks(2)
-			for(int i = 0; i < sz; i++){
-				// std::cout << "i: " << i << " " << omp_get_thread_num() << "\n";
-				for(int j = 0; j < 13; j++){
-					// std::cout << "j: " << j << " " << omp_get_thread_num() << "\n";
-					NTL::ZZ_p outp_;
-					// std::cout << "inp: " << inp[i][j][0] << " " << omp_get_thread_num() << "\n";
-					NTL::InnerProduct(outp_, inp[i][j], keyshare);
-					// std::cout << "i: " << outp_ << " " << omp_get_thread_num() << "\n";
-					u64 interim = NTL::conv<ulong>(outp_);
-					// std::cout << interim << "\n";
-					(*outp)[i][j] = round_toL(interim, q, q1);
-				}
-				// std::cout << "i: " << i << "    " << omp_get_thread_num() << "\n";
+		for(int i = 0; i < sz; i++){
+			for(int j = 0; j < 13; j++){
+				NTL::ZZ_p outp_;
+				NTL::InnerProduct(outp_, inp[i][j], keyshare);
+				(*outp)[i][j] = (u64)round_off(outp_, logq, logq1);
 			}
-		// }
-	}
-
-
-	void part_eval_single(std::vector<NTL::vec_ZZ_p> inp, std::vector<u32> *outp, NTL::vec_ZZ_p keyshare, u64 q, u64 q1){
-		for(int j = 0; j < 13; j++){
-			NTL::ZZ_p outp_;
-			NTL::InnerProduct(outp_, inp[j], keyshare);
-			u64 interim = NTL::conv<ulong>(outp_);
-			(*outp)[j] = round_toL(interim, q, q1);
 		}
 	}
 
+	void part_eval_single(std::vector<NTL::vec_ZZ_p> inp, std::vector<u64> *outp, NTL::vec_ZZ_p keyshare, int logq, int logq1){
+		for(int j = 0; j < 13; j++){
+			NTL::ZZ_p outp_;
+			NTL::InnerProduct(outp_, inp[j], keyshare);
+			(*outp)[j] = (u64)round_off(outp_, logq, logq1);
+		}
+	}
 
-	void direct_eval_single(std::vector<NTL::vec_ZZ_p> inp, block *outp, NTL::vec_ZZ_p key, u64 q, u64 p){
+	void direct_eval_single(std::vector<NTL::vec_ZZ_p> inp, block *outp, NTL::vec_ZZ_p key, int logq, int logp){
 		std::vector<u16> outp_arr;
 		outp_arr.resize(13);
 		for(int i = 0; i < 13; i++){
 			NTL::ZZ_p outp_;
 			NTL::InnerProduct(outp_, inp[i], key);
-			u64 interim = NTL::conv<ulong>(outp_);
-			outp_arr[i] = round_toL(interim, q, p);
-			// direct_eval_basic3(inp[i], &(outp_arr[i]), key, q, p, t);
+			outp_arr[i] = (u16)round_off(outp_, logq, logp);
 		}
 		*outp = decimal_array_to_single_block(outp_arr);
 	}
 
-
-	void direct_eval(std::vector<block> in, std::vector<block>* dir_out, NTL::vec_ZZ_p key, u64 q, u64 p){
+	void direct_eval(std::vector<block> in, std::vector<block>* dir_out, NTL::vec_ZZ_p key, int logq, int logp){
 		std::vector<std::vector<NTL::vec_ZZ_p>> inp;
 		inp.resize(in.size());
 		for(int i = 0; i < inp.size(); i++){
 			inp[i].resize(13);
 			std::vector<u16> outp_arr(13);
 			for(int j = 0; j < 13; j++){
-				inp[i][j].SetLength(512);
+				inp[i][j].SetLength(1024);
 			}
 			convert_block_to_extended_lwr_input(in[i], &(inp[i]));
 			for(int j = 0; j < 13; j++){
 				NTL::ZZ_p outp_;
 				NTL::InnerProduct(outp_, inp[i][j], key);
-				u64 interim = NTL::conv<ulong>(outp_);
-				outp_arr[j] = round_toL(interim, q, p);
+				outp_arr[j] = (u16)round_off(outp_, logq, logp);
 			}
 			(*dir_out)[i] = decimal_array_to_single_block(outp_arr);
 		}

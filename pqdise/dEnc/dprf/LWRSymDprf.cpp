@@ -56,7 +56,7 @@ namespace dEnc{
 
 	void LWRSymDprf::KeyGen(u64 n, u64 m){
 		using namespace NTL;
-	    ZZ_p::init(conv<ZZ>(q));
+	    ZZ_p::init(conv<ZZ>(pow(2,logq)));
 		T = n;
 		t = m;
 		random(LWRKey, dim);
@@ -77,7 +77,7 @@ namespace dEnc{
 		this->mListenChls = { listenChls.begin(), listenChls.end() };
 	    this->mIsClosed = false;
 	    using namespace NTL;
-	    ZZ_p::init(conv<ZZ>(q));
+	    ZZ_p::init(conv<ZZ>(pow(2,logq)));
 	    // std::cout << "xor: " << (oc::ZeroBlock ^ oc::OneBlock) << "\n";
 		startListening();
 	}
@@ -186,7 +186,7 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
         // When a multiple is sent, this its interpreted as requesting 
         // several DPRF evaluations.
 		
-		if((rr.size() % sizeof(u64) != 0) || (rr.size() % (sizeof(u64)*13*512) != sizeof(u64)))
+		if((rr.size() % sizeof(u64) != 0) || (rr.size() % (sizeof(u64)*13*1024) != sizeof(u64)))
 			throw std::runtime_error(LOCATION);
 
   //       // Get a view of the data as u64.
@@ -197,14 +197,14 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
 		u64 group_id = inp.back();
 		inp.pop_back();
 		using namespace NTL;
-        ZZ_p::init(conv<ZZ>(q));
+        ZZ_p::init(conv<ZZ>(pow(2,logq)));
 		// std::vector<u64> keyshare = this->getSubkey(group_id);
 		vec_ZZ_p keyshare = this->getSubkey(group_id);
 
-		u64 sz = inp.size()/(13*512);
+		u64 sz = inp.size()/(13*1024);
 
 		// // a vector to hold the DPRF output shares.
-		std::vector<u32> fx;
+		std::vector<u64> fx;
 		fx.resize(sz * 13);
 
 		// std::vector<std::vector<std::vector<u64>>> inp_(sz, std::vector<std::vector<u64>>(13, std::vector<u64>(512)));
@@ -214,7 +214,7 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
         for(int i = 0; i < sz; i++){
         	inp_[i].resize(13);
         	for(int j = 0; j < 13; j++){
-        		inp_[i][j].SetLength(512);
+        		inp_[i][j].SetLength(1024);
         	}
         }
 		
@@ -223,14 +223,14 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
 		// // #pragma omp parallel for num_threads(threadnum) collapse(3)
 		for(int i = 0; i < sz; i++){
 			for(int j = 0; j < 13; j++){
-				for(int k = 0; k < 512; k++){
-					inp_[i][j][k] = conv<ZZ_p>(inp[i * 13 * 512 + j * 512 + k]);
+				for(int k = 0; k < 1024; k++){
+					inp_[i][j][k] = conv<ZZ_p>(inp[i * 13 * 1024 + j * 1024 + k]);
 				}
 			}
 		}
 		
-		std::vector<std::vector<u32>> tmp(sz, std::vector<u32>(13));
-		part_eval(inp_, &tmp, keyshare, q, q1);
+		std::vector<std::vector<u64>> tmp(sz, std::vector<u64>(13));
+		part_eval(inp_, &tmp, keyshare, logq, logq1);
 
 		// // #pragma omp parallel for num_threads(threadnum) collapse(2)
 		for(int i = 0; i < sz; i++){
@@ -264,19 +264,19 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
             // to store DPRF input and final DPRF output blocks respectively
             std::vector<block> out;
             std::vector<u64> inp;
-            std::vector<u32> fxx;
-            std::vector<std::vector<u32>> interim_out;
+            std::vector<u64> fxx;
+            std::vector<std::vector<u64>> interim_out;
             std::unique_ptr<std::future<void>[]> async;
         };
         auto state = std::make_shared<State>();
         using namespace NTL;
-        ZZ_p::init(conv<ZZ>(q));
+        ZZ_p::init(conv<ZZ>(pow(2,logq)));
         // allocate space to store the DPRF outputs.
         state->out.resize(in.size());
         // allocate space to store the partial DPRF evaluation of the party itself.
-        state->interim_out.resize(in.size(), std::vector<u32>(13));
+        state->interim_out.resize(in.size(), std::vector<u64>(13));
         
-        state->inp.resize(in.size() * 13 * 512);
+        state->inp.resize(in.size() * 13 * 1024);
         // Copy the inputs into a shared vector so that it 
         // can be sent to all parties using one allocation.
         std::vector<block> in_;
@@ -287,7 +287,7 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
         for(int i = 0; i < in.size(); i++){
         	inp_[i].resize(13);
         	for(int j = 0; j < 13; j++){
-        		inp_[i][j].SetLength(512);
+        		inp_[i][j].SetLength(1024);
         	}
         }
 
@@ -298,8 +298,8 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
         // #pragma omp parallel for num_threads(8) collapse(3)
         for(int i = 0; i < in_.size(); i++){
         	for(int j = 0; j < 13; j++){
-        		for(int k = 0; k < 512; k++){
-        			state->inp[i * 13 * 512 + j * 512 + k] = conv<ulong>(inp_[i][j][k]);
+        		for(int k = 0; k < 1024; k++){
+        			state->inp[i * 13 * 1024 + j * 1024 + k] = conv<ulong>(inp_[i][j][k]);
         		}
         	}
         }
@@ -328,7 +328,7 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
 		u64 group_id = findGroupId(collaborators, t, T);
 		state->inp.push_back(group_id);
 		// send this input to all parties
-		for (u64 i = this->partyId + 1; i < end; ++i)
+		for (int i = this->partyId + 1; i < end; ++i)
 		{
 			auto c = i % T;
 			if (c > this->partyId) --c;
@@ -344,7 +344,7 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
 		// std::vector<u64> keyshare = this->getSubkey(group_id);
 		vec_ZZ_p keyshare = this->getSubkey(group_id);
 		// std::cout << "entering own part eval\n";
-		part_eval(inp_, &state->interim_out, keyshare, q, q1);		
+		part_eval(inp_, &state->interim_out, keyshare, logq, logq1);		
 		
         // allocate space to store the other DPRF output shares
 		auto numRecv = (t - 1);
@@ -352,7 +352,7 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
 
         // Each row of fx will hold a the DPRF output shares from one party
 		
-		oc::MatrixView<u32> fx(state->fxx.begin(), state->fxx.end(), in.size()*13);
+		oc::MatrixView<u64> fx(state->fxx.begin(), state->fxx.end(), in.size()*13);
 
         // allocate space to store the futures which allow us to block until the
         // other DPRF output shares have arrived.
@@ -372,7 +372,7 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
         // actual DPRF output. This requires blocking to receive the DPRF output
         // and then combining it.
 		AsyncEval ae;
-		std::vector<std::vector<u32>> tmp(in.size(), std::vector<u32>(13));
+		std::vector<std::vector<u64>> tmp(in.size(), std::vector<u64>(13));
 		std::vector<std::vector<u16>> final_o(in.size(), std::vector<u16>(13));
 
 		ae.get = [state, tmp, final_o, flag, numRecv, fx]() mutable -> std::vector<block>
@@ -391,7 +391,7 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
 						tmp[i][j] = interim_o[i][j];
 						for(int k = 0; k < numRecv; k++){
 							tmp[i][j] -= fx[k][i * 13 + j];
-							tmp[i][j] = moduloL(tmp[i][j], q1);
+							tmp[i][j] = moduloL(tmp[i][j], logq1);
 						}
 					}
 				}
@@ -400,11 +400,11 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
 				// #pragma omp parallel for num_threads(8) collapse(2)
 				for(int i = 0; i < o.size(); i++){
 					for(int j = 0; j < 13; j++){
-						tmp[i][j] = moduloL(fx[flag][i * 13 + j] - interim_o[i][j], q1);
+						tmp[i][j] = moduloL(fx[flag][i * 13 + j] - interim_o[i][j], logq1);
 						for(int k = 0; k < numRecv; k++){
 							if(k != flag){
 								tmp[i][j] -= fx[k][i * 13 + j];
-								tmp[i][j] = moduloL(tmp[i][j], q1);
+								tmp[i][j] = moduloL(tmp[i][j], logq1);
 							}
 						}
 					}
@@ -414,7 +414,7 @@ void LWRSymDprf::serveOne(span<u8> rr, u64 chlIdx){
 			for(int j = 0; j < o.size(); j++){
 				for(int k = 0; k < 13; k++){
 					// tmp[j][k] = moduloL(tmp[j][k], q1);
-					final_o[j][k] = round_toL(tmp[j][k], q1, p);
+					final_o[j][k] = round_toL(tmp[j][k], logq1, logp);
 				}
 			}
 			// #pragma omp parallel for num_threads(8)

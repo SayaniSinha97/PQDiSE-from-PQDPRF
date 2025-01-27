@@ -253,7 +253,7 @@ int main(int argc, char** argv)
         u64 n = cmd.get<u64>("total");
         u64 m = cmd.get<u64>("thr");
         if(cmd.isSet("sl")){
-            compare_partial_evaluations_LWR(2, m, n, 4294967296, 268435456); //q = 2^32, q1 = 2^28
+            compare_partial_evaluations_LWR(2, m, n, 64, 42); //q = 2^64, q1 = 2^42
         }
         else if(cmd.isSet("ss")){
             compare_partial_evaluations_NPRSym(2, m, n);

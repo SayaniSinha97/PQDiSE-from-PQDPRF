@@ -23,8 +23,7 @@ namespace dEnc{
 
 	// generate key shares on the fly for parties in a t-sized subset with group_id = group_id. Thus we avoid storing all the key-shares 
 	// of all the parties beforehand for the performance evaluation purpose here.
-
-	void generate_shares(std::vector<NTL::vec_ZZ_p> &key_shares, int t, int T, u64 q, int n, NTL::vec_ZZ_p key){
+	void generate_shares(std::vector<NTL::vec_ZZ_p> &key_shares, int t, int T, int n, NTL::vec_ZZ_p key){
 		using namespace NTL;
 		VectorCopy(key_shares[0], key, n);
 		for(int i = 1; i < t; i++){
@@ -286,10 +285,10 @@ namespace dEnc{
 	}
 
 
-void compare_partial_evaluations_LWR(int iters, int t, int T, u64 q, u64 q1){
+void compare_partial_evaluations_LWR(int iters, int t, int T, u64 logq, u64 logq1){
 		std::cout << "inside compare_partial_evaluations LWR:\n";
-		int p = 1024;
-		int n = 512;
+		int logp = 10;
+		int n = 1024;
 		using namespace NTL;
 
 		oc::PRNG prng(oc::sysRandomSeed());
@@ -297,7 +296,7 @@ void compare_partial_evaluations_LWR(int iters, int t, int T, u64 q, u64 q1){
 		block inp;
 
 		// Set ZZ_p modulus equal to q
-		ZZ_p::init(conv<ZZ>(q));
+		ZZ_p::init(conv<ZZ>(pow(2,logq)));
 
 		// Storage for extended input
 		std::vector<vec_ZZ_p> extended_inp;;
@@ -316,7 +315,7 @@ void compare_partial_evaluations_LWR(int iters, int t, int T, u64 q, u64 q1){
 		block dir_res;
 
 		// Storage for combining partial evaluations from t parties
-		std::vector<u32> combined_eval;
+		std::vector<u64> combined_eval;
 		combined_eval.resize(13);
 
 		// Storage for modulo-p combined result, which further gets converted to block
@@ -324,7 +323,7 @@ void compare_partial_evaluations_LWR(int iters, int t, int T, u64 q, u64 q1){
 		tmp_result.resize(13);
 
 		// Storage for each of the partial evaluations of the DPRF by t parties
-		std::vector<std::vector<u32>> part_evals;
+		std::vector<std::vector<u64>> part_evals;
 		part_evals.resize(t);
 		for(int i = 0; i < t; i++){
 			part_evals[i].resize(13);
@@ -355,7 +354,7 @@ void compare_partial_evaluations_LWR(int iters, int t, int T, u64 q, u64 q1){
 			inp = prng.get<block>();
 
 			convert_block_to_extended_lwr_input(inp, &(extended_inp));
-			direct_eval_single(extended_inp, &dir_res, key, q, p);
+			direct_eval_single(extended_inp, &dir_res, key, logq, logp);
 			// std::cout << "dir_res: " << dir_res << "\n";
 			// for(int i = 0; i < sz; i++){
 			// 	std::cout << dir_res[i] << " ";
@@ -363,20 +362,18 @@ void compare_partial_evaluations_LWR(int iters, int t, int T, u64 q, u64 q1){
 			// std::cout << "\n";
 
 			for(u64 group_id = 1; group_id <= iters2; group_id++){
-				generate_shares(key_shares, t, T, q, n, key);
+				generate_shares(key_shares, t, T, n, key);
 
 				for(int i = 0; i < t; i++){
 					struct timespec parteval_start = {0, 0};
 					struct timespec parteval_end = {0, 0};
 					clock_gettime(CLOCK_MONOTONIC, &parteval_start);
-					// part_eval_extended_multiple2(inp_arr, &part_evals[i], key_shares[i], q, q1, t);
-					part_eval_single(extended_inp, &part_evals[i], key_shares[i], q, q1);
+					part_eval_single(extended_inp, &part_evals[i], key_shares[i], logq, logq1);
 					clock_gettime(CLOCK_MONOTONIC, &parteval_end);
 					part_reqd_time = (((double)parteval_end.tv_nsec + 1.0e+9 * parteval_end.tv_sec) - ((double)parteval_start.tv_nsec + 1.0e+9 * parteval_start.tv_sec)) * 1.0e-3;
 					// std::cout << part_reqd_time << "\n";
 					partial_eval_time[i] += part_reqd_time;
 				}
-				// ZZ_p::init(conv<ZZ>(q1));
 				struct timespec finaleval_start = {0, 0};
 				struct timespec finaleval_end = {0, 0};
 				clock_gettime(CLOCK_MONOTONIC, &finaleval_start);
@@ -385,9 +382,9 @@ void compare_partial_evaluations_LWR(int iters, int t, int T, u64 q, u64 q1){
 					combined_eval[j] = part_evals[0][j];
 					for(int k = 1; k < t; k++){
 						combined_eval[j] -= part_evals[k][j];
-						combined_eval[j] = moduloL(combined_eval[j], q1);
+						combined_eval[j] = moduloL(combined_eval[j], logq1);
 					}
-					tmp_result[j] = round_toL(combined_eval[j], q1, p);
+					tmp_result[j] = round_toL(combined_eval[j], logq1, logp);
 				}
 				outp = decimal_array_to_single_block(tmp_result);
 				clock_gettime(CLOCK_MONOTONIC, &finaleval_end);
