@@ -1,5 +1,5 @@
 # PQDiSE-from-PQDPRF
-PQDPRF stands for post-quantum secure distributed PRF (Pseudo Random Function), constructed from quantum-safe LWR (Learning with Rounding) assumption. Furthermore, the efficacy of this DPRF is shown by using it in the construction of post-quantum secure distributed symmetric key encryption (abbreviated as PQDiSE).
+PQDPRF stands for post-quantum secure distributed PRF (Pseudo Random Function), constructed from quantum-safe LWR (Learning with Rounding) assumption. Furthermore, the efficacy of this DPRF is shown by using it in the construction of post-quantum secure distributed symmetric key encryption (abbreviated as PQDiSE). This repository corresponds to [this paper](https://eprint.iacr.org/2025/152.pdf). 
 
 ## PQDiSE-from-PQDPRF
 This repository has two separate and independent folders: **pqdprf** and **pqdise**. The codebase uses the NTL library.<br/>
